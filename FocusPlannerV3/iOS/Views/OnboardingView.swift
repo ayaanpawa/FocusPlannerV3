@@ -66,7 +66,7 @@ struct OnboardingView: View {
 
     private var header: some View {
         VStack(spacing: 8) {
-            Image(systemName: "graduationcap.fill")
+            Image(systemName: "calendar")
                 .font(.system(size: 56))
                 .foregroundStyle(Color.fpAccent.gradient)
 

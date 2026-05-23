@@ -33,7 +33,7 @@ struct FocusPlannerApp: App {
         }
 
         // Menu-bar dropdown — quick glance at today / tomorrow / upcoming
-        MenuBarExtra("FocusPlanner", systemImage: "graduationcap.fill") {
+        MenuBarExtra("FocusPlanner", systemImage: "calendar") {
             MenuBarView()
                 .environmentObject(store)
         }

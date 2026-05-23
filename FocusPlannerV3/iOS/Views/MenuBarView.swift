@@ -40,7 +40,7 @@ struct MenuBarView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            Image(systemName: "graduationcap.fill")
+            Image(systemName: "calendar")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Color.fpAccent)
             Text("FocusPlanner")
