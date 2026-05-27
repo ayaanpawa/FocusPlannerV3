@@ -29,7 +29,6 @@ struct ContentView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.fpBg)
-        .creamWindow(Color.fpBg)        // cream title bar on macOS
         .preferredColorScheme(.light)   // editorial cream theme is light-only
         .tint(Color.fpAccent)
         #if os(iOS)
