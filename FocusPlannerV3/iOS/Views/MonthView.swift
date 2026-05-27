@@ -8,18 +8,16 @@ struct MonthView: View {
     private let weekLabels = ["S", "M", "T", "W", "T", "F", "S"]
 
     var body: some View {
-        ZStack {
-            Color.fpBg.ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                headerBar
-                weekdayBar
-                Divider().background(Color.fpDivider)
-                monthGrid
-                Divider().background(Color.fpDivider)
-                upcomingPanel
-            }
+        VStack(spacing: 0) {
+            headerBar
+            weekdayBar
+            Divider().background(Color.fpDivider)
+            monthGrid
+            Divider().background(Color.fpDivider)
+            upcomingPanel
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.fpBg)
     }
 
     // MARK: - Header (serif month title + nav)

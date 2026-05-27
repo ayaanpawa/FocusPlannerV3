@@ -24,7 +24,11 @@ struct HomeworkView: View {
     private var nothingToShow: Bool { filteredEntries.isEmpty }
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            headerBar
+            Divider().background(Color.fpDivider)
+            filterBar
+            Divider().background(Color.fpDivider)
             Group {
                 if store.isLoading && nothingToShow {
                     ProgressView("Loading from Canvas…")
@@ -38,48 +42,58 @@ struct HomeworkView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.fpBg)
-            .navigationTitle("Homework")
-            .toolbar {
-                ToolbarItem(placement: .barLeading) {
-                    Button {
-                        Task { await store.fetch() }
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.fpBg)
+        .sheet(isPresented: $showAdd) {
+            AddItemSheet(kind: .homework, date: Date())
+                .environmentObject(store)
+        }
+        .sheet(item: $editingCustom) { item in
+            AddItemSheet(editing: item)
+                .environmentObject(store)
+        }
+        .sheet(item: $detailItem) { item in
+            ItemDetailView(item: item)
+                .environmentObject(store)
+        }
+    }
+
+    private var headerBar: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("Homework")
+                .font(.fpHeadline(28))
+                .foregroundStyle(Color.fpInk)
+            Spacer()
+            HStack(spacing: 14) {
+                Button { Task { await store.fetch() } } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.fpInkMuted)
                 }
-                ToolbarItem(placement: .barTrailing) {
-                    Button { showAdd = true } label: {
-                        Image(systemName: "plus")
-                    }
+                .buttonStyle(.plain)
+                Button { showAdd = true } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.fpInkMuted)
                 }
-            }
-            .safeAreaInset(edge: .top) {
-                Picker("Filter", selection: $filter) {
-                    ForEach(HWFilter.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .padding(.horizontal, 16)
-                .padding(.top, 10)
-                .padding(.bottom, 6)
-                .background(Color.fpBg)
-            }
-            .sheet(isPresented: $showAdd) {
-                AddItemSheet(kind: .homework, date: Date())
-                    .environmentObject(store)
-            }
-            .sheet(item: $editingCustom) { item in
-                AddItemSheet(editing: item)
-                    .environmentObject(store)
-            }
-            .sheet(item: $detailItem) { item in
-                ItemDetailView(item: item)
-                    .environmentObject(store)
+                .buttonStyle(.plain)
             }
         }
-        .stackNavStyle()
-        .refreshable { await store.fetch() }
+        .padding(.horizontal, 24)
+        .padding(.top, 18)
+        .padding(.bottom, 12)
+    }
+
+    private var filterBar: some View {
+        Picker("Filter", selection: $filter) {
+            ForEach(HWFilter.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color.fpBg)
     }
 
     private var homeworkList: some View {

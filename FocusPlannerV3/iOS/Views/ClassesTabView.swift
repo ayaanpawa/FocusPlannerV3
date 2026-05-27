@@ -6,7 +6,9 @@ struct ClassesTabView: View {
     @State private var showAdd       = false
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            headerBar
+            Divider().background(Color.fpDivider)
             List {
                 ForEach(store.periods.sorted { $0.number < $1.number }) { p in
                     PeriodRow(period: p, dueSoon: dueSoon(for: p))
@@ -20,12 +22,13 @@ struct ClassesTabView: View {
                     VStack(spacing: 10) {
                         Image(systemName: "books.vertical.fill")
                             .font(.system(size: 36))
-                            .foregroundStyle(.secondary.opacity(0.4))
+                            .foregroundStyle(Color.fpInkSubtle)
                         Text("No courses yet")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.fpHeadline(16))
+                            .foregroundStyle(Color.fpInk)
                         Text("Tap + to add one.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
+                            .font(.fpMono(12))
+                            .foregroundStyle(Color.fpInkMuted)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 40)
@@ -34,32 +37,41 @@ struct ClassesTabView: View {
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
-            .background(Color.fpBg)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .navigationTitle("Courses")
-            .toolbar {
-                ToolbarItem(placement: .barLeading) {
-                    Button {
-                        Task { await store.resyncClasses() }
-                    } label: {
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                    }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.fpBg)
+        .sheet(item: $editingPeriod) { period in
+            PeriodEditSheet(period: period, onSave: save, onDelete: delete)
+        }
+        .sheet(isPresented: $showAdd) {
+            PeriodEditSheet(period: newPeriod(), isNew: true, onSave: save, onDelete: nil)
+        }
+    }
+
+    private var headerBar: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("Courses")
+                .font(.fpHeadline(28))
+                .foregroundStyle(Color.fpInk)
+            Spacer()
+            HStack(spacing: 14) {
+                Button { Task { await store.resyncClasses() } } label: {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.fpInkMuted)
                 }
-                ToolbarItem(placement: .barTrailing) {
-                    Button { showAdd = true } label: {
-                        Image(systemName: "plus")
-                    }
+                .buttonStyle(.plain)
+                Button { showAdd = true } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.fpInkMuted)
                 }
-            }
-            .refreshable { await store.resyncClasses() }
-            .sheet(item: $editingPeriod) { period in
-                PeriodEditSheet(period: period, onSave: save, onDelete: delete)
-            }
-            .sheet(isPresented: $showAdd) {
-                PeriodEditSheet(period: newPeriod(), isNew: true, onSave: save, onDelete: nil)
+                .buttonStyle(.plain)
             }
         }
-        .stackNavStyle()
+        .padding(.horizontal, 24)
+        .padding(.top, 18)
+        .padding(.bottom, 12)
     }
 
     // MARK: - Helpers

@@ -10,7 +10,9 @@ struct TestsView: View {
     private var nothingToShow: Bool { mergedTests.isEmpty }
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            headerBar
+            Divider().background(Color.fpDivider)
             Group {
                 if store.isLoading && nothingToShow {
                     ProgressView("Loading…")
@@ -19,48 +21,61 @@ struct TestsView: View {
                     VStack(spacing: 14) {
                         Image(systemName: "checkmark.seal.fill")
                             .font(.system(size: 44))
-                            .foregroundStyle(.green.opacity(0.6))
+                            .foregroundStyle(Color.fpGreen)
                         Text("No upcoming tests")
-                            .font(.headline)
+                            .font(.fpHeadline(20))
+                            .foregroundStyle(Color.fpInk)
                         Text("Enjoy the break!")
-                            .foregroundStyle(.secondary)
+                            .font(.fpMono(12))
+                            .foregroundStyle(Color.fpInkMuted)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.fpBg)
                 } else {
                     testList
                 }
             }
-            .navigationTitle("Tests & Quizzes")
-            .toolbar {
-                ToolbarItem(placement: .barLeading) {
-                    Button {
-                        Task { await store.fetch() }
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.fpBg)
+        .sheet(isPresented: $showAdd) {
+            AddItemSheet(kind: .test, date: Date())
+                .environmentObject(store)
+        }
+        .sheet(item: $editingCustom) { item in
+            AddItemSheet(editing: item)
+                .environmentObject(store)
+        }
+        .sheet(item: $detailItem) { item in
+            ItemDetailView(item: item)
+                .environmentObject(store)
+        }
+    }
+
+    private var headerBar: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("Tests & Quizzes")
+                .font(.fpHeadline(28))
+                .foregroundStyle(Color.fpInk)
+            Spacer()
+            HStack(spacing: 14) {
+                Button { Task { await store.fetch() } } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.fpInkMuted)
                 }
-                ToolbarItem(placement: .barTrailing) {
-                    Button { showAdd = true } label: {
-                        Image(systemName: "plus")
-                    }
+                .buttonStyle(.plain)
+                Button { showAdd = true } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.fpInkMuted)
                 }
-            }
-            .sheet(isPresented: $showAdd) {
-                AddItemSheet(kind: .test, date: Date())
-                    .environmentObject(store)
-            }
-            .sheet(item: $editingCustom) { item in
-                AddItemSheet(editing: item)
-                    .environmentObject(store)
-            }
-            .sheet(item: $detailItem) { item in
-                ItemDetailView(item: item)
-                    .environmentObject(store)
+                .buttonStyle(.plain)
             }
         }
-        .stackNavStyle()
-        .refreshable { await store.fetch() }
+        .padding(.horizontal, 24)
+        .padding(.top, 18)
+        .padding(.bottom, 12)
     }
 
     private var testList: some View {

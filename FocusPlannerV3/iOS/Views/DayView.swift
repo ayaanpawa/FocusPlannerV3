@@ -14,85 +14,66 @@ struct DayView: View {
     private var isEmpty: Bool { dayEntries.isEmpty }
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                dateNavBar
-                Divider()
-                actionRow
-                Divider()
+        VStack(spacing: 0) {
+            dateNavBar
+            Divider()
+            actionRow
+            Divider()
 
-                if isEmpty {
-                    emptyState
-                } else {
-                    ScrollView {
-                        VStack(spacing: 18) {
-                            if !dayTests.isEmpty {
-                                section(title: "Tests & Quizzes", icon: "bolt.fill", color: .orange) {
-                                    ForEach(dayTests) { entry in
-                                        switch entry {
-                                        case .canvas(let item):
-                                            DayPanelRow(item: item, kind: .test)
-                                                .contentShape(Rectangle())
-                                                .onTapGesture { detailItem = item }
-                                        case .custom(let item):
-                                            CustomDayRow(item: item) { editingCustom = item }
-                                        }
-                                    }
-                                }
-                            }
-                            if !dayHomework.isEmpty {
-                                section(title: "Homework", icon: "doc.text.fill", color: .green) {
-                                    ForEach(dayHomework) { entry in
-                                        switch entry {
-                                        case .canvas(let item):
-                                            DayPanelRow(item: item, kind: .homework)
-                                                .contentShape(Rectangle())
-                                                .onTapGesture { detailItem = item }
-                                        case .custom(let item):
-                                            CustomDayRow(item: item) { editingCustom = item }
-                                        }
+            if isEmpty {
+                emptyState
+            } else {
+                ScrollView {
+                    VStack(spacing: 18) {
+                        if !dayTests.isEmpty {
+                            section(title: "Tests & Quizzes", icon: "bolt.fill", color: .orange) {
+                                ForEach(dayTests) { entry in
+                                    switch entry {
+                                    case .canvas(let item):
+                                        DayPanelRow(item: item, kind: .test)
+                                            .contentShape(Rectangle())
+                                            .onTapGesture { detailItem = item }
+                                    case .custom(let item):
+                                        CustomDayRow(item: item) { editingCustom = item }
                                     }
                                 }
                             }
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 18)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.fpBg)
-            .navBarInline()
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text(store.selectedDate.formatted(.dateTime.weekday(.wide).month(.wide).day()))
-                        .font(.headline)
-                }
-                ToolbarItem(placement: .barTrailing) {
-                    if !cal.isDateInToday(store.selectedDate) {
-                        Button("Today") {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                store.selectedDate = Date()
+                        if !dayHomework.isEmpty {
+                            section(title: "Homework", icon: "doc.text.fill", color: .green) {
+                                ForEach(dayHomework) { entry in
+                                    switch entry {
+                                    case .canvas(let item):
+                                        DayPanelRow(item: item, kind: .homework)
+                                            .contentShape(Rectangle())
+                                            .onTapGesture { detailItem = item }
+                                    case .custom(let item):
+                                        CustomDayRow(item: item) { editingCustom = item }
+                                    }
+                                }
                             }
                         }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 18)
                 }
-            }
-            .sheet(item: $addingKind) { kind in
-                AddItemSheet(kind: kind, date: store.selectedDate)
-                    .environmentObject(store)
-            }
-            .sheet(item: $editingCustom) { item in
-                AddItemSheet(editing: item)
-                    .environmentObject(store)
-            }
-            .sheet(item: $detailItem) { item in
-                ItemDetailView(item: item)
-                    .environmentObject(store)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .stackNavStyle()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.fpBg)
+        .sheet(item: $addingKind) { kind in
+            AddItemSheet(kind: kind, date: store.selectedDate)
+                .environmentObject(store)
+        }
+        .sheet(item: $editingCustom) { item in
+            AddItemSheet(editing: item)
+                .environmentObject(store)
+        }
+        .sheet(item: $detailItem) { item in
+            ItemDetailView(item: item)
+                .environmentObject(store)
+        }
     }
 
     // MARK: - Action buttons
@@ -134,20 +115,26 @@ struct DayView: View {
             Button { shift(-1) } label: {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.fpInk)
                     .frame(width: 44, height: 44)
             }
+            .buttonStyle(.plain)
 
             Spacer()
 
             VStack(spacing: 2) {
-                Text(store.selectedDate.formatted(.dateTime.month(.wide).day().year()))
-                    .font(.system(size: 18, weight: .bold))
-                let wd = cal.component(.weekday, from: store.selectedDate)
-                if wd == 1 || wd == 7 {
-                    Text("Weekend")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.secondary)
+                Text(store.selectedDate.formatted(.dateTime.weekday(.wide).month(.wide).day()))
+                    .font(.fpHeadline(20))
+                    .foregroundStyle(Color.fpInk)
+                if !cal.isDateInToday(store.selectedDate) {
+                    Button("Today") {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            store.selectedDate = Date()
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .font(.fpMono(11, weight: .medium))
+                    .foregroundStyle(Color.fpAccent)
                 }
             }
 
@@ -156,12 +143,13 @@ struct DayView: View {
             Button { shift(1) } label: {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.fpInk)
                     .frame(width: 44, height: 44)
             }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
         .background(Color.fpBg)
     }
 
