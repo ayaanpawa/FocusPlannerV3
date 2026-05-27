@@ -117,13 +117,30 @@ extension View {
 struct WindowAccessor: NSViewRepresentable {
     let configure: (NSWindow) -> Void
 
+    final class Coordinator {
+        var configured = false
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
     func makeNSView(context: Context) -> NSView {
         let v = NSView()
-        DispatchQueue.main.async { if let w = v.window { configure(w) } }
+        scheduleConfigureOnce(view: v, coordinator: context.coordinator)
         return v
     }
+
     func updateNSView(_ nsView: NSView, context: Context) {
-        DispatchQueue.main.async { if let w = nsView.window { configure(w) } }
+        // Run only on first attachment — never on subsequent SwiftUI updates,
+        // otherwise we'd ping-pong with AppKit and beach-ball the main thread.
+        scheduleConfigureOnce(view: nsView, coordinator: context.coordinator)
+    }
+
+    private func scheduleConfigureOnce(view: NSView, coordinator: Coordinator) {
+        guard !coordinator.configured else { return }
+        DispatchQueue.main.async {
+            guard !coordinator.configured, let w = view.window else { return }
+            coordinator.configured = true
+            configure(w)
+        }
     }
 }
 
