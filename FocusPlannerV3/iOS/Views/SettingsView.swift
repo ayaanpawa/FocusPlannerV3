@@ -4,83 +4,108 @@ struct SettingsView: View {
     @EnvironmentObject private var store: PlannerStore
     @Environment(\.dismiss) private var dismiss
 
-    @State private var schoolHost  = ""
-    @State private var tokenText   = ""
-    @State private var showToken   = false
-    @State private var isRefreshing = false
-    @State private var savedToast   = false
-    @State private var confirmSignOut = false
+    @State private var schoolHost      = ""
+    @State private var tokenText       = ""
+    @State private var showToken       = false
+    @State private var isRefreshing    = false
+    @State private var savedToast      = false
+    @State private var confirmSignOut  = false
 
     /// Replace this URL with wherever you host your real privacy policy.
     private let privacyPolicyURL = URL(string: "https://example.com/focusplanner-privacy")!
 
     var body: some View {
-        NavigationStack {
-            Form {
-                canvasSection
-                howToSection
-                syncSection
-                aboutSection
-                signOutSection
-            }
-            .navigationTitle("Settings")
-            .navBarInline()
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+        VStack(spacing: 0) {
+            headerBar
+            Divider().background(Color.fpDivider)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 28) {
+                    canvasSection
+                    howToSection
+                    syncSection
+                    aboutSection
+                    signOutSection
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { saveAndDismiss() }
-                        .fontWeight(.semibold)
-                }
-            }
-            .onAppear {
-                schoolHost = AppSettings.schoolHost
-                tokenText  = KeychainHelper.loadToken() ?? ""
-            }
-            .alert("Saved", isPresented: $savedToast) {
-                Button("OK") {}
-            } message: {
-                Text("Your settings have been updated and the app will sync your planner.")
-            }
-            .alert("Disconnect from Canvas?", isPresented: $confirmSignOut) {
-                Button("Cancel", role: .cancel) {}
-                Button("Disconnect", role: .destructive) {
-                    AppSettings.signOut()
-                    store.clearCache()
-                    store.periods = []
-                    dismiss()
-                }
-            } message: {
-                Text("This will remove your access token, school URL, and all cached planner data from this device.")
+                .padding(24)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.fpBg)
+        .onAppear {
+            schoolHost = AppSettings.schoolHost
+            tokenText  = KeychainHelper.loadToken() ?? ""
+        }
+        .alert("Saved", isPresented: $savedToast) {
+            Button("OK") {}
+        } message: {
+            Text("Your settings have been updated and the app will sync your planner.")
+        }
+        .alert("Disconnect from Canvas?", isPresented: $confirmSignOut) {
+            Button("Cancel", role: .cancel) {}
+            Button("Disconnect", role: .destructive) {
+                AppSettings.signOut()
+                store.clearCache()
+                store.periods = []
+                dismiss()
+            }
+        } message: {
+            Text("This will remove your access token, school URL, and all cached planner data from this device.")
+        }
+        #if os(macOS)
+        .frame(width: 520, height: 640)
+        #endif
+    }
+
+    // MARK: - Header
+
+    private var headerBar: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("Settings")
+                .font(.fpHeadline(28))
+                .foregroundStyle(Color.fpInk)
+            Spacer()
+            HStack(spacing: 14) {
+                Button("Cancel") { dismiss() }
+                    .buttonStyle(.plain)
+                    .font(.fpMono(12))
+                    .foregroundStyle(Color.fpInkMuted)
+                Button("Save") { saveAndDismiss() }
+                    .buttonStyle(.plain)
+                    .font(.fpBody(13, weight: .semibold))
+                    .foregroundStyle(Color.fpBg)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(Color.fpInk, in: Capsule())
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 18)
+        .padding(.bottom, 12)
     }
 
     // MARK: - Sections
 
     private var canvasSection: some View {
-        Section {
-            // School URL
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Canvas URL")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+        sectionBlock(title: "Canvas") {
+            fieldLabel("Canvas URL") {
                 TextField("yourschool.instructure.com", text: $schoolHost)
                     .textFieldStyle(.plain)
                     .autocorrectionDisabled()
                     .noAutoCap()
                     .urlKeyboard()
-                    .font(.system(size: 14, design: .monospaced))
+                    .font(.fpMono(13))
+                    .foregroundStyle(Color.fpInk)
+                    .padding(12)
+                    .background(Color.fpBgRaised, in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(Color.fpDivider, lineWidth: 1)
+                    )
             }
-            .padding(.vertical, 4)
 
-            // Token
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Access Token")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                HStack {
+            fieldLabel("Access Token") {
+                HStack(spacing: 8) {
                     Group {
                         if showToken {
                             TextField("Paste token", text: $tokenText)
@@ -90,114 +115,198 @@ struct SettingsView: View {
                             SecureField("Paste token", text: $tokenText)
                         }
                     }
-                    .font(.system(size: 13, design: .monospaced))
+                    .textFieldStyle(.plain)
+                    .font(.fpMono(12))
+                    .foregroundStyle(Color.fpInk)
 
                     Button { showToken.toggle() } label: {
                         Image(systemName: showToken ? "eye.slash" : "eye")
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 13))
+                            .foregroundStyle(Color.fpInkMuted)
                     }
                     .buttonStyle(.plain)
                 }
+                .padding(12)
+                .background(Color.fpBgRaised, in: RoundedRectangle(cornerRadius: 10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(Color.fpDivider, lineWidth: 1)
+                )
             }
-            .padding(.vertical, 4)
-        } header: {
-            Text("Canvas")
-        } footer: {
+
             Text("Your token is stored securely in Keychain and only ever sent to your Canvas server.")
-                .font(.caption2)
+                .font(.fpMono(10))
+                .foregroundStyle(Color.fpInkSubtle)
+                .lineSpacing(2)
         }
     }
 
     private var howToSection: some View {
-        Section("How to get an access token") {
-            VStack(alignment: .leading, spacing: 6) {
+        sectionBlock(title: "How to get an access token") {
+            VStack(alignment: .leading, spacing: 9) {
                 InfoStep(n: 1, text: "Open Canvas in Safari and sign in")
                 InfoStep(n: 2, text: "Go to Account → Settings")
                 InfoStep(n: 3, text: "Scroll to \"Approved Integrations\"")
                 InfoStep(n: 4, text: "Tap \"+ New Access Token\" and copy it")
             }
-            .padding(.vertical, 4)
         }
     }
 
     private var syncSection: some View {
-        Section("Sync") {
-            if let last = store.lastFetched {
-                HStack {
-                    Text("Last synced")
-                    Spacer()
-                    Text(last, style: .relative)
-                        .foregroundStyle(.secondary)
-                        .font(.callout)
+        sectionBlock(title: "Sync") {
+            VStack(alignment: .leading, spacing: 10) {
+                if let last = store.lastFetched {
+                    HStack {
+                        Text("Last synced")
+                            .font(.fpMono(12))
+                            .foregroundStyle(Color.fpInkMuted)
+                        Spacer()
+                        Text(last, style: .relative)
+                            .font(.fpMono(12))
+                            .foregroundStyle(Color.fpInk)
+                    }
                 }
-            }
 
-            Button {
-                Task {
-                    isRefreshing = true
-                    await store.fetch()
-                    isRefreshing = false
+                Button {
+                    Task {
+                        isRefreshing = true
+                        await store.fetch()
+                        isRefreshing = false
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 12, weight: .semibold))
+                        Text("Refresh Now")
+                            .font(.fpBody(13, weight: .semibold))
+                        Spacer()
+                        if isRefreshing { ProgressView().controlSize(.small) }
+                    }
+                    .foregroundStyle(Color.fpInk)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(Color.fpBgRaised, in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(Color.fpDivider, lineWidth: 1)
+                    )
                 }
-            } label: {
-                HStack {
-                    Label("Refresh Now", systemImage: "arrow.clockwise")
-                    Spacer()
-                    if isRefreshing { ProgressView().controlSize(.small) }
-                }
-            }
-            .disabled(isRefreshing)
+                .buttonStyle(.plain)
+                .disabled(isRefreshing)
 
-            Button(role: .destructive) {
-                store.clearCache()
-            } label: {
-                Label("Clear Cached Data", systemImage: "trash")
+                Button { store.clearCache() } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 12, weight: .semibold))
+                        Text("Clear Cached Data")
+                            .font(.fpBody(13, weight: .semibold))
+                        Spacer()
+                    }
+                    .foregroundStyle(Color.fpAccent)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(Color.fpAccent.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(.plain)
             }
         }
     }
 
     private var aboutSection: some View {
-        Section {
-            HStack {
-                Text("Version")
-                Spacer()
-                Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
-                    .foregroundStyle(.secondary)
-            }
-            Link(destination: privacyPolicyURL) {
+        sectionBlock(title: "About") {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack {
-                    Label("Privacy Policy", systemImage: "hand.raised.fill")
+                    Text("Version")
+                        .font(.fpMono(12))
+                        .foregroundStyle(Color.fpInkMuted)
                     Spacer()
-                    Image(systemName: "arrow.up.right.square")
-                        .foregroundStyle(.secondary)
-                        .font(.caption)
+                    Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
+                        .font(.fpMono(12))
+                        .foregroundStyle(Color.fpInk)
                 }
+                Link(destination: privacyPolicyURL) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "hand.raised.fill")
+                            .font(.system(size: 12, weight: .semibold))
+                        Text("Privacy Policy")
+                            .font(.fpBody(13, weight: .semibold))
+                        Spacer()
+                        Image(systemName: "arrow.up.right.square")
+                            .font(.system(size: 11))
+                    }
+                    .foregroundStyle(Color.fpInk)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(Color.fpBgRaised, in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(Color.fpDivider, lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Text("FocusPlanner is not affiliated with Instructure, Inc., Canvas LMS, or any educational institution. It uses your personal Canvas access token to access your own data — no other servers are involved.")
+                    .font(.fpMono(10))
+                    .foregroundStyle(Color.fpInkSubtle)
+                    .lineSpacing(2)
             }
-        } header: {
-            Text("About")
-        } footer: {
-            Text("FocusPlanner is not affiliated with Instructure, Inc., Canvas LMS, or any educational institution. It uses your personal Canvas access token to access your own data — no other servers are involved.")
-                .font(.caption2)
         }
     }
 
     private var signOutSection: some View {
-        Section {
-            Button(role: .destructive) {
-                confirmSignOut = true
-            } label: {
-                HStack {
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                    Text("Disconnect from Canvas")
-                    Spacer()
-                }
+        Button { confirmSignOut = true } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "rectangle.portrait.and.arrow.right")
+                    .font(.system(size: 12, weight: .semibold))
+                Text("Disconnect from Canvas")
+                    .font(.fpBody(13, weight: .semibold))
+                Spacer()
             }
+            .foregroundStyle(Color.fpAccent)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(Color.fpAccent.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(Color.fpAccent.opacity(0.25), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Layout helpers
+
+    @ViewBuilder
+    private func sectionBlock<Content: View>(
+        title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title.uppercased())
+                .font(.fpMono(10, weight: .bold))
+                .foregroundStyle(Color.fpInkSubtle)
+                .kerning(0.6)
+            content()
+        }
+    }
+
+    @ViewBuilder
+    private func fieldLabel<Content: View>(
+        _ label: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(label)
+                .font(.fpMono(11, weight: .medium))
+                .foregroundStyle(Color.fpInkMuted)
+            content()
         }
     }
 
     // MARK: - Save
 
     private func saveAndDismiss() {
-        let cleanedHost = AppSettings.normalize(schoolHost)
+        let cleanedHost  = AppSettings.normalize(schoolHost)
         let cleanedToken = tokenText.trimmingCharacters(in: .whitespaces)
 
         AppSettings.schoolHost = cleanedHost
@@ -219,12 +328,13 @@ private struct InfoStep: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Text("\(n)")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(.white)
+                .font(.fpMono(10, weight: .bold))
+                .foregroundStyle(Color.fpBg)
                 .frame(width: 18, height: 18)
                 .background(Color.fpAccent, in: Circle())
             Text(text)
-                .font(.callout)
+                .font(.fpBody(13, weight: .regular))
+                .foregroundStyle(Color.fpInk)
         }
     }
 }

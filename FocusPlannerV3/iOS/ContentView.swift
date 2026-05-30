@@ -4,6 +4,9 @@ struct ContentView: View {
     @EnvironmentObject private var store: PlannerStore
     @State private var showSettings   = false
     @State private var showOnboarding = false
+    #if os(macOS)
+    @Environment(\.openSettings) private var openSettings
+    #endif
 
     var body: some View {
         TabView(selection: $store.activeTab) {
@@ -31,6 +34,16 @@ struct ContentView: View {
         .background(Color.fpBg)
         .preferredColorScheme(.light)   // editorial cream theme is light-only
         .tint(Color.fpAccent)
+        #if os(macOS)
+        .toolbar {
+            ToolbarItem(placement: .automatic) {
+                Button { openSettings() } label: {
+                    Image(systemName: "gearshape.fill")
+                }
+                .help("Settings")
+            }
+        }
+        #endif
         #if os(iOS)
         // iOS gets a floating gear button — macOS uses the Settings scene (⌘,)
         .overlay(alignment: .topTrailing) {
